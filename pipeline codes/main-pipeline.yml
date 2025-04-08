@@ -1,0 +1,20 @@
+# main-pipeline.yml
+trigger:
+  branches:
+    include:
+      - main
+
+stages:
+  - stage: InstallIIS
+    jobs:
+      - template: install-iis.yml
+
+  - stage: InstallPHP
+    dependsOn: InstallIIS
+    jobs:
+      - template: install-php.yml
+
+  - stage: InstallMariaDB
+    dependsOn: InstallPHP
+    jobs:
+      - template: install-mariadb.yml

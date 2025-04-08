@@ -1,0 +1,22 @@
+# install-iis.yml
+trigger: none
+
+pool:
+  name: 'windows'  # Your self-hosted agent pool
+
+jobs:
+  - job: InstallIIS
+    displayName: Install IIS
+    steps:
+      - task: PowerShell@2
+        displayName: Install IIS
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host "Installing IIS..."
+            if (-not (Get-WindowsFeature -Name Web-Server).Installed) {
+              Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+              Write-Host "✅ IIS Installed"
+            } else {
+              Write-Host "ℹ️ IIS is already installed"
+            }

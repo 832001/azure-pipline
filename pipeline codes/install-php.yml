@@ -1,0 +1,37 @@
+# install-php.yml
+trigger: none
+
+pool:
+  name: 'windows'
+
+jobs:
+  - job: InstallPHP
+    displayName: Install PHP
+    steps:
+      - task: PowerShell@2
+        displayName: Download and Configure PHP
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host "Installing PHP..."
+
+            $phpUrl = "https://windows.php.net/downloads/releases/php-8.2.15-nts-Win32-vs16-x64.zip"
+            $phpPath = "C:\PHP"
+            $phpZip = "C:\php.zip"
+
+            if (Test-Path $phpPath) {
+              Write-Host "Removing existing PHP folder..."
+              Remove-Item -Recurse -Force $phpPath
+            }
+
+            Invoke-WebRequest -Uri $phpUrl -OutFile $phpZip
+            Expand-Archive -Path $phpZip -DestinationPath $phpPath -Force
+            Remove-Item -Path $phpZip
+
+            $env:Path += ";$phpPath"
+
+            Import-Module WebAdministration
+            Add-WebConfiguration -pspath "MACHINE/WEBROOT/APPHOST" -filter "system.webServer/fastCgi" -value @{ fullPath="$phpPath\php-cgi.exe"; arguments=""; maxInstances="5" }
+            Add-WebConfiguration -pspath "MACHINE/WEBROOT/APPHOST" -filter "system.webServer/handlers" -value @{ name="PHP_via_FastCGI"; path="*.php"; verb="*"; modules="FastCgiModule"; scriptProcessor="$phpPath\php-cgi.exe"; resourceType="Either" }
+
+            php -v

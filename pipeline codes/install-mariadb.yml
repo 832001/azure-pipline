@@ -1,0 +1,31 @@
+# install-mariadb.yml
+trigger: none
+
+pool:
+  name: 'windows'
+
+jobs:
+  - job: InstallMariaDB
+    displayName: Install MariaDB
+    steps:
+      - task: PowerShell@2
+        displayName: Download and Install MariaDB
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host "Installing MariaDB..."
+
+            $mariadbUrl = "https://downloads.mariadb.com/MariaDB/mariadb-11.3.2/winx64-packages/mariadb-11.3.2-winx64.msi"
+            $installerPath = "C:\mariadb.msi"
+
+            Invoke-WebRequest -Uri $mariadbUrl -OutFile $installerPath
+
+            Start-Process -Wait -FilePath $installerPath -ArgumentList "/qn INSTALLDIR=C:\MariaDB SERVICENAME=MariaDB"
+
+            $service = Get-Service | Where-Object { $_.Name -like "*mysql*" -or $_.DisplayName -like "*MariaDB*" }
+            if ($service) {
+              Start-Service -Name $service.Name
+              Write-Host "✅ MariaDB service started: $($service.Name)"
+            } else {
+              Write-Warning "❌ MariaDB service not found!"
+            }
